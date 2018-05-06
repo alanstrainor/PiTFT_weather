@@ -52,7 +52,7 @@ class Weather():
 			avg.WordsNode(pos=(column,220), font="arial",text=forecastText[i], parent=rootNode)
 			avg.WordsNode(pos=(column,240), font="arial",text=forecastHighs[i] + "c", parent=rootNode)
 			avg.WordsNode(pos=(column,260), font="arial",text=forecastLows[i] + "c", parent=rootNode)
-			column += 130
+			column += 120
 		player.play()
 
 
@@ -80,7 +80,7 @@ while(is_run):
 	for forecast in forecasts:
 	#for i in range(5):
 		forecastCounter += 1
-		forecastText[forecastCounter] = forecast.text
+		forecastText[forecastCounter] = forecast.text[:14]
 		forecastDays[forecastCounter] = forecast.day
 		forecastHighs[forecastCounter] = forecast.high
 		forecastLows[forecastCounter] = forecast.low
