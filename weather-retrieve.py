@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import os, syslog
-import pygame
+import datetime
+#import pygame
 import signal
 import time
-import pywapi
 import string
 from libavg import avg, gesture, app, ImageNode, player
+from weather import Weather, Unit
 
 # global vars
 is_run = True
@@ -21,55 +22,92 @@ colourBlack = (0, 0, 0)
 
 # update interval
 updateRate = 600 # seconds
+# Yahoo Weather
+weather = Weather(unit=Unit.CELSIUS)
+#Counter for forecast
+forecastCounter = 0
+# define arrays
+forecastText = {}
+forecastDays = {}
+forecastHighs = {}
+forecastLows = {}
 
+now = datetime.datetime.now()
 
 class Weather():
 	def __init__(self, parent=None):
 		player = avg.Player.get()
 		canvas = player.createMainCanvas(size=(480,320))
 		rootNode = canvas.getRootNode()
+		avg.WordsNode(pos=(10,10), font="arial",text="Wind Speed: " + windSpeed, parent=rootNode)
+		avg.WordsNode(pos=(10,30), font="arial",text="Temp: " + currTemp, parent=rootNode)
+		imgNode = avg.ImageNode(href="images/" + imageCode + ".png", pos=(10,30),parent=player.getRootNode())
+
 		player.play()
+
+
 
 while(is_run):
     # retrieve data from weather.com
     #TODO catch error and retry
-    weather = pywapi.get_weather_from_weather_com(weatherDotComLocationCode,units = 'metric')
-    # extract current data for today
-    station = weather['current_conditions']['station']
-    today = weather['forecasts'][0]['day_of_week'][0:3] + " " \
-          + weather['forecasts'][0]['date'][4:] + " " \
-          + weather['forecasts'][0]['date'][:3]
-    windSpeed = int(weather['current_conditions']['wind']['speed'])
-    currWind = "{:.0f} km/h ".format(windSpeed) \
-               + weather['current_conditions']['wind']['text']
-    currTemp = weather['current_conditions']['temperature'] \
-               + " "+ u'\N{DEGREE SIGN}' + "C"
-    currPress = weather['current_conditions']['barometer']['reading'][:-3] \
-                + " hPa"
-    uv = "UV {}".format(weather['current_conditions']['uv']['text'])
-    humid = "Hum {} %".format(weather['current_conditions']['humidity'])
-    # extract forecast data
-    forecastDays = {}
-    forecaseHighs = {}
-    forecaseLows = {}
-    forecastPrecips = {}
-    forecastWinds = {}
-    start = 0
-    try:
-        test = float(weather['forecasts'][0]['day']['wind']['speed'])
-    except ValueError:
-        start = 1
-    for i in range(start, 5):
-        if not(weather['forecasts'][i]):
-            break
-        forecastDays[i] = weather['forecasts'][i]['day_of_week'][0:3]
-        forecaseHighs[i] = weather['forecasts'][i]['high'] + u'\N{DEGREE SIGN}' + "C"
-        forecaseLows[i] = weather['forecasts'][i]['low'] + u'\N{DEGREE SIGN}' + "C"
-        forecastPrecips[i] = weather['forecasts'][i]['day']['chance_precip'] + "% (pluie)"
-        forecastWinds[i] = "{:.0f}".format(int(weather['forecasts'][i]['day']['wind']['speed'])) + \
-                           " km/h "+weather['forecasts'][i]['day']['wind']['text']
-    # blank the screen
+    #weather = pywapi.get_weather_from_weather_com(weatherDotComLocationCode,units = 'metric')
+	location = weather.lookup_by_location('dublin')
+	condition = location.condition
+	#print(location.atmosphere)
 
+	# Get weather forecasts for the upcoming days.
+
+	forecasts = location.forecast
+	#station = forecast.text
+	today = str(now)
+	windSpeed = location.wind.speed
+	currTemp = location.condition.temp
+	currPress = location.atmosphere['pressure']
+	imageCode = location.condition.code
+
+	forecasts = location.forecast
+	for forecast in forecasts:
+		forecastCounter += 1
+		forecastText[forecastCounter] = forecast.text
+		forecastDays[forecastCounter] = forecast.day
+		forecastHighs[forecastCounter] = forecast.high
+		forecastLows[forecastCounter] = forecast.low
+
+	# extract current data for today
+    #today = weather['forecasts'][0]['day_of_week'][0:3] + " " \
+    #      + weather['forecasts'][0]['date'][4:] + " " \
+    #      + weather['forecasts'][0]['date'][:3]
+    #windSpeed = int(weather['current_conditions']['wind']['speed'])
+    #currWind = "{:.0f} km/h ".format(windSpeed) \
+    #           + weather['current_conditions']['wind']['text']
+    #currTemp = weather['current_conditions']['temperature'] \
+    #           + " "+ u'\N{DEGREE SIGN}' + "C"
+    #currPress = weather['current_conditions']['barometer']['reading'][:-3] \
+    #            + " h
+    #uv = "UV {}".format(weather['current_conditions']['uv']['text'])
+    #humid = "Hum {} %".format(weather['current_conditions']['humidity'])
+    # extract forecast data
+    #forecastDays = {}
+    #forecaseHighs = {}
+    #forecaseLows = {}
+    #forecastPrecips = {}
+    #forecastWinds = {}
+    #start = 0
+    #try:
+	#        test = float(weather['forecasts'][0]['day']['wind']['speed'])
+    #except ValueError:
+    #    start = 1
+    #for i in range(start, 5):
+    #    if not(weather['forecasts'][i]):
+    #        break
+    #    forecastDays[i] = weather['forecasts'][i]['day_of_week'][0:3]
+    #    forecaseHighs[i] = weather['forecasts'][i]['high'] + u'\N{DEGREE SIGN}' + "C"
+    #    forecaseLows[i] = weather['forecasts'][i]['low'] + u'\N{DEGREE SIGN}' + "C"
+    #    forecastPrecips[i] = weather['forecasts'][i]['day']['chance_precip'] + "% (pluie)"
+    #    forecastWinds[i] = "{:.0f}".format(int(weather['forecasts'][i]['day']['wind']['speed'])) + \
+    #                       " km/h "+weather['forecasts'][i]['day']['wind']['text']
+    # blank the screen
+	is_run = False
 
 
 app.App().run(Weather())
